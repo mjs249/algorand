@@ -22,28 +22,23 @@ def fetch_node_status():
 
 def fetch_logs():
     """
-    Fetch the latest filtered logs for the Algorand service using journalctl.
+    Fetch the latest 20 logs for the Algorand service.
     """
     try:
-        # Fetch the latest 20 logs
         result = subprocess.run(
-            ["journalctl", "-u", "algorand", "--no-pager", "-n", "20"],
+            ["sudo", "journalctl", "-u", "algorand", "--no-pager", "-n", "20"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
         )
-        if result.returncode == 0 and result.stdout.strip():
-            logs = result.stdout.strip()
-            
-            # Filter out overly verbose lines
-            filtered_logs = "\n".join(
-                line for line in logs.split("\n")
-                if not line.startswith("Config loaded") and not line.startswith("{")
-            )
-            
-            return filtered_logs if filtered_logs else "No relevant log entries found."
-        else:
-            return f"Error fetching logs: {result.stderr.strip()}"
-    except FileNotFoundError:
-        return "Error: journalctl not found or not configured for Algorand."
 
+        print("Fetched batch logs...")  # Debugging
+        print(result.stdout)            # Debugging
+
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+        else:
+            return "No new log entries."
+    except Exception as e:
+        print(f"Error fetching logs: {e}")  # Debugging
+        return f"Error fetching logs: {e}"
