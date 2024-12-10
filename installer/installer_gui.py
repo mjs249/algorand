@@ -1,40 +1,61 @@
 import tkinter as tk
 from tkinter import messagebox
-from threading import Thread
-from installer.node_installer import install_algorand_node
+from installer.node_installer import install_node
+from installer.dependency_manager import check_dependencies
 
-class AlgorandInstallerGUI:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Algorand Node Installer")
-        self.root.geometry("600x400")
+def on_close():
+    """Handle the close button event."""
+    if messagebox.askokcancel("Quit", "Do you want to quit the installer?"):
+        root.destroy()
 
-        # Title Label
-        tk.Label(self.root, text="Algorand Node Installer", font=("Arial", 18)).pack(pady=20)
+def run_installation(status_label):
+    """Run the real installation process and update the GUI."""
+    try:
+        status_label.config(text="Status: Checking Dependencies...")
+        root.update()  # Force GUI to update
 
-        # Status Label
-        self.status_label = tk.Label(self.root, text="Ready to install.", font=("Arial", 12))
-        self.status_label.pack(pady=10)
+        check_dependencies()
 
-        # Install Button
-        self.install_button = tk.Button(self.root, text="Install Node", font=("Arial", 14), command=self.start_installation)
-        self.install_button.pack(pady=10)
+        status_label.config(text="Status: Installing Algorand Node...")
+        root.update()  # Force GUI to update
 
-        # Exit Button
-        self.exit_button = tk.Button(self.root, text="Exit", font=("Arial", 14), command=self.root.quit)
-        self.exit_button.pack(pady=10)
+        install_node()
 
-    def start_installation(self):
-        """Run the installation in a separate thread."""
-        Thread(target=self.run_installation, daemon=True).start()
+        status_label.config(text="Status: Installation Complete!")
+        messagebox.showinfo("Success", "Algorand node installation completed successfully!")
 
-    def run_installation(self):
-        """Perform the node installation."""
-        self.status_label.config(text="Installing...")
-        try:
-            install_algorand_node()
-            self.status_label.config(text="Installation complete.")
-            messagebox.showinfo("Success", "Algorand Node installed successfully!")
-        except Exception as e:
-            self.status_label.config(text="Installation failed.")
-            messagebox.showerror("Error", f"Installation failed: {e}")
+    except Exception as e:
+        status_label.config(text="Status: Installation Failed")
+        messagebox.showerror("Error", f"An error occurred: {e}")
+
+def launch_gui():
+    """Launch the GUI for the Algorand installer."""
+    global root
+    root = tk.Tk()
+    root.title("Algorand Installer")
+    root.geometry("500x300")
+
+    # Create a label
+    title_label = tk.Label(root, text="Algorand Node Installer", font=("Arial", 16))
+    title_label.pack(pady=20)
+
+    # Create a status label
+    status_label = tk.Label(root, text="Status: Ready", font=("Arial", 12))
+    status_label.pack(pady=10)
+
+    # Create an install button
+    install_button = tk.Button(
+        root,
+        text="Start Installation",
+        command=lambda: run_installation(status_label),
+        font=("Arial", 12)
+    )
+    install_button.pack(pady=20)
+
+    # Create a close button
+    close_button = tk.Button(root, text="Close", command=on_close, font=("Arial", 12))
+    close_button.pack(pady=10)
+
+    # Run the GUI event loop
+    root.protocol("WM_DELETE_WINDOW", on_close)
+    root.mainloop()
